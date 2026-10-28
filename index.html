@@ -39,6 +39,7 @@
     Start kamera
   </button>
 <button onclick="testConnection()">Test forbindelse</button>
+  <button onclick="testJsonpConnection()">Test svar fra Google</button>
   <div id="reader"></div>
   <div id="status">Klar til scanning</div>
 
@@ -60,6 +61,34 @@
   } catch (error) {
     alert("Forbindelsesfejl: " + error.message);
   }
+}
+    function testJsonpConnection() {
+  const status = document.getElementById("status");
+  status.textContent = "Tester forbindelse...";
+
+  const callbackName = "ssdConnectionCallback";
+
+  window[callbackName] = function(result) {
+    status.textContent = result.success
+      ? "Forbindelse til Google Apps Script virker!"
+      : "Forbindelsen fejlede.";
+
+    document.getElementById("jsonpTestScript")?.remove();
+    delete window[callbackName];
+  };
+
+  const script = document.createElement("script");
+  script.id = "jsonpTestScript";
+
+  script.src =
+    "https://script.google.com/macros/s/AKfycbwrhkU0ePzD8Lu_IMsmObmBZKifKkjRolSIuY4Rn8zE38EBT3d-8ue5TEZ8DeBi5xfz/exec" +
+    "?action=scannerPing&callback=" + callbackName;
+
+  script.onerror = function() {
+    status.textContent = "Kunne ikke modtage svar.";
+  };
+
+  document.body.appendChild(script);
 }
     let scanner;
     let scanning = false;
