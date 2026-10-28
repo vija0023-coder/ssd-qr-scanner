@@ -38,11 +38,29 @@
   <button id="startButton" onclick="startScanner()">
     Start kamera
   </button>
-
+<button onclick="testConnection()">Test forbindelse</button>
   <div id="reader"></div>
   <div id="status">Klar til scanning</div>
 
   <script>
+    async function testConnection() {
+  const url = "https://script.google.com/macros/s/AKfycbwrhkU0ePzD8Lu_IMsmObmBZKifKkjRolSIuY4Rn8zE38EBT3d-8ue5TEZ8DeBi5xfz/exec";
+
+  try {
+    await fetch(url, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain"
+      },
+      body: JSON.stringify({ action: "connection_test" })
+    });
+
+    alert("Testforespørgsel sendt. Svaret kan ikke læses endnu.");
+  } catch (error) {
+    alert("Forbindelsesfejl: " + error.message);
+  }
+}
     let scanner;
     let scanning = false;
 
