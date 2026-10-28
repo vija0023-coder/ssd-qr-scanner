@@ -1,1 +1,81 @@
+<!DOCTYPE html>
+<html lang="da">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SSD QR Scanner</title>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 25px 15px;
+      background: #f5f5f5;
+    }
+    h1 { font-size: 24px; }
+    #reader {
+      max-width: 450px;
+      margin: 25px auto;
+      background: white;
+    }
+    #status {
+      font-size: 18px;
+      margin: 20px auto;
+      max-width: 450px;
+    }
+    button {
+      padding: 14px 25px;
+      font-size: 17px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Sanatan Seva Denmark</h1>
+  <h2>QR Check-in Scanner</h2>
 
+  <button id="startButton" onclick="startScanner()">
+    Start kamera
+  </button>
+
+  <div id="reader"></div>
+  <div id="status">Klar til scanning</div>
+
+  <script>
+    let scanner;
+    let scanning = false;
+
+    async function startScanner() {
+      if (scanning) return;
+
+      document.getElementById("status").textContent =
+        "Starter kamera...";
+
+      scanner = new Html5Qrcode("reader");
+
+      try {
+        await scanner.start(
+          { facingMode: "environment" },
+          { fps: 10, qrbox: { width: 250, height: 250 } },
+          (decodedText) => {
+            document.getElementById("status").textContent =
+              "QR-kode læst. Check-in er endnu ikke aktiveret.";
+            console.log("QR scanned");
+          },
+          () => {}
+        );
+
+        scanning = true;
+        document.getElementById("startButton").style.display = "none";
+        document.getElementById("status").textContent =
+          "Kamera aktivt – klar til scanning";
+
+      } catch (error) {
+        document.getElementById("status").textContent =
+          "Kunne ikke starte kamera: " + error;
+      }
+    }
+  </script>
+</body>
+</html>
