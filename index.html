@@ -186,6 +186,104 @@ function checkLoginResult(requestId, attempt) {
 
   document.body.appendChild(script);
 }
+    let scanBusy = false;
+
+async function processQrCode(decodedText) {
+  if (scanBusy || !volunteerSession) return;
+
+  let token;
+
+  try {
+    token = new URL(decodedText).searchParams.get("checkin");
+  } catch {
+    document.getElementById("status").textContent =
+      "Ugyldig QR-kode.";
+    return;
+  }
+
+  if (!token) {
+    document.getElementById("status").textContent =
+      "Dette er ikke en SSD-billet.";
+    return;
+  }
+
+  scanBusy = true;
+  document.getElementById("status").textContent =
+    "Kontrollerer booking...";
+
+  const requestId = crypto.randomUUID();
+
+  try {
+    await fetch(WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "text/plain" },
+      body: JSON.stringify({
+        action: "volunteerCheckIn",
+        token: token,
+        sessionToken: volunteerSession,
+        requestId: requestId
+      })
+    });
+
+    checkQrResult(requestId, 0);
+
+  } catch (error) {
+    document.getElementById("status").textContent =
+      "Forbindelsesfejl.";
+    scanBusy = false;
+  }
+}
+
+function checkQrResult(requestId, attempt) {
+  if (attempt >= 15) {
+    document.getElementById("status").textContent =
+      "Intet svar fra serveren. Kontroller Dashboard.";
+    scanBusy = false;
+    return;
+  }
+
+  const callbackName = "ssdQrResultCallback";
+  const script = document.createElement("script");
+
+  window[callbackName] = function(result) {
+    script.remove();
+    delete window[callbackName];
+
+    if (result.pending) {
+      setTimeout(() => checkQrResult(requestId, attempt + 1), 1000);
+      return;
+    }
+
+    if (result.success) {
+      document.getElementById("status").textContent =
+        "ANKOMMET: " + result.bookingId +
+        " | " + result.leadGuest +
+        " | " + result.totalGuests + " gæster";
+    } else {
+      document.getElementById("status").textContent =
+        result.message || "Check-in afvist.";
+    }
+
+    setTimeout(() => {
+      scanBusy = false;
+    }, 3000);
+  };
+
+  script.src = WEB_APP_URL +
+    "?action=checkInResult" +
+    "&requestId=" + encodeURIComponent(requestId) +
+    "&callback=" + callbackName;
+
+  script.onerror = function() {
+    script.remove();
+    document.getElementById("status").textContent =
+      "Kunne ikke hente check-in-resultatet.";
+    scanBusy = false;
+  };
+
+  document.body.appendChild(script);
+}
     let scanner;
     let scanning = false;
 
