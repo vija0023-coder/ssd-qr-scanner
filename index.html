@@ -300,10 +300,8 @@ function checkQrResult(requestId, attempt) {
           { facingMode: "environment" },
           { fps: 10, qrbox: { width: 250, height: 250 } },
           (decodedText) => {
-            document.getElementById("status").textContent =
-              "QR-kode læst. Check-in er endnu ikke aktiveret.";
-            console.log("QR scanned");
-          },
+  processQrCode(decodedText);
+},
           () => {}
         );
 
