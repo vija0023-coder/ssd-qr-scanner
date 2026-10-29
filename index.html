@@ -34,7 +34,23 @@
 <body>
   <h1>Sanatan Seva Denmark</h1>
   <h2>QR Check-in Scanner</h2>
+<div id="loginSection">
+  <h3>Frivilliglogin</h3>
 
+  <input
+    type="password"
+    id="volunteerPassword"
+    placeholder="Indtast adgangskode"
+    autocomplete="off"
+    style="padding:12px; font-size:17px; width:220px;"
+  >
+
+  <br><br>
+
+  <button onclick="volunteerLogin()">
+    Log ind
+  </button>
+</div>
   <button id="startButton" onclick="startScanner()">
     Start kamera
   </button>
