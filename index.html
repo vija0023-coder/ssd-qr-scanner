@@ -265,9 +265,9 @@ function checkQrResult(requestId, attempt) {
         result.message || "Check-in afvist.";
     }
 
-    setTimeout(() => {
-      scanBusy = false;
-    }, 3000);
+setTimeout(() => {
+  scanBusy = false;
+}, 1200);
   };
 
   script.src = WEB_APP_URL +
