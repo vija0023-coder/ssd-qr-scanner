@@ -251,7 +251,7 @@ function checkQrResult(requestId, attempt) {
     delete window[callbackName];
 
     if (result.pending) {
-      setTimeout(() => checkQrResult(requestId, attempt + 1), 1000);
+      setTimeout(() => checkQrResult(requestId, attempt + 1), 300);
       return;
     }
 
@@ -265,9 +265,7 @@ function checkQrResult(requestId, attempt) {
         result.message || "Check-in afvist.";
     }
 
-setTimeout(() => {
-  scanBusy = false;
-}, 1200);
+scanBusy = false;
   };
 
   script.src = WEB_APP_URL +
