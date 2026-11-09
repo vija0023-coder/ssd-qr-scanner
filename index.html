@@ -70,8 +70,36 @@
   </button>
 
 
-  <div id="reader"></div>
-  <div id="status">Klar til scanning</div>
+<div id="reader"></div>
+<div id="status">Klar til scanning</div>
+
+<div id="manualSection" style="display:none;">
+  <h3>Manual Check-in</h3>
+
+  <form id="manualForm" autocomplete="off">
+    <input
+      id="manualCode"
+      type="text"
+      inputmode="numeric"
+      pattern="[0-9]{4}"
+      maxlength="4"
+      placeholder="4-digit booking number"
+      aria-label="4-digit booking number"
+      required
+      style="
+        padding:12px;
+        font-size:20px;
+        width:190px;
+        max-width:65%;
+        box-sizing:border-box;
+        text-align:center;
+        letter-spacing:4px;
+      "
+    >
+
+    <button type="submit">Check In</button>
+  </form>
+</div>
 
   <script>
     async function testConnection() {
@@ -179,6 +207,7 @@ function checkLoginResult(requestId, attempt) {
     if (result.success) {
       volunteerSession = result.sessionToken;
       document.getElementById("loginSection").style.display = "none";
+      document.getElementById("manualSection").style.display = "block";
       document.getElementById("status").textContent =
         "Login lykkedes. Klar til scanning.";
     } else {
@@ -203,7 +232,7 @@ function checkLoginResult(requestId, attempt) {
     let scanBusy = false;
 
 async function processQrCode(decodedText) {
-  if (scanBusy || !volunteerSession) return;
+  if (scanBusy || manualBusy || !volunteerSession) return;
 
   let token;
 
@@ -291,6 +320,109 @@ scanBusy = false;
     script.remove();
     document.getElementById("status").textContent =
       "Kunne ikke hente check-in-resultatet.";
+    scanBusy = false;
+  };
+
+  document.body.appendChild(script);
+}
+    let manualBusy = false;
+
+document.getElementById("manualForm")
+  .addEventListener("submit", async function(event) {
+    event.preventDefault();
+
+    if (!volunteerSession || manualBusy || scanBusy) return;
+
+    const input = document.getElementById("manualCode");
+    const code = input.value.trim();
+
+    if (!/^\d{4}$/.test(code)) {
+      document.getElementById("status").textContent =
+        "Enter a valid 4-digit booking number.";
+      return;
+    }
+
+    manualBusy = true;
+    scanBusy = true;
+
+    document.getElementById("status").textContent =
+      "Checking booking...";
+
+    const requestId = crypto.randomUUID();
+
+    try {
+      await fetch(WEB_APP_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          action: "manualCheckIn",
+          code: code,
+          sessionToken: volunteerSession,
+          requestId: requestId
+        })
+      });
+
+      checkManualResult(requestId, 0);
+
+    } catch (error) {
+      document.getElementById("status").textContent =
+        "Connection error.";
+      manualBusy = false;
+      scanBusy = false;
+    }
+  });
+
+function checkManualResult(requestId, attempt) {
+  if (attempt >= 30) {
+    document.getElementById("status").textContent =
+      "No response. Check Dashboard before retrying.";
+    manualBusy = false;
+    scanBusy = false;
+    return;
+  }
+
+  const callbackName = "ssdManualResultCallback";
+  const script = document.createElement("script");
+
+  window[callbackName] = function(result) {
+    script.remove();
+    delete window[callbackName];
+
+    if (result.pending) {
+      setTimeout(() => checkManualResult(requestId, attempt + 1), 500);
+      return;
+    }
+
+    if (result.success) {
+      document.getElementById("status").textContent =
+        "ANKOMMET: " + result.bookingId +
+        " | " + result.leadGuest +
+        " | " + result.totalGuests + " gæster";
+
+      const input = document.getElementById("manualCode");
+      input.value = "";
+      input.focus();
+
+    } else {
+      document.getElementById("status").textContent =
+        result.message || "Check-in rejected.";
+    }
+
+    manualBusy = false;
+    scanBusy = false;
+  };
+
+  script.src = WEB_APP_URL +
+    "?action=checkInResult" +
+    "&requestId=" + encodeURIComponent(requestId) +
+    "&callback=" + callbackName;
+
+  script.onerror = function() {
+    script.remove();
+    document.getElementById("status").textContent =
+      "Could not retrieve check-in result.";
+    manualBusy = false;
     scanBusy = false;
   };
 
